@@ -65,6 +65,13 @@ export default function Sidebar({
                 }`}
                 onClick={() => onSelectEntry(entry.id)}
               >
+                <div className="flex items-start gap-3 mb-3">
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0 mt-1"
+                    style={{ backgroundColor: entry.color }}
+                    title={`Color: ${entry.color}`}
+                  />
+                </div>
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate mb-1">
