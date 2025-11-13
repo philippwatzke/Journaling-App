@@ -3,20 +3,24 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import MarkdownEditor from '@/components/MarkdownEditor';
-import { JournalEntry } from '@/types/journal';
+import { JournalEntry, Folder } from '@/types/journal';
 import { storage } from '@/lib/storage';
 
 export default function Home() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [currentTitle, setCurrentTitle] = useState('');
   const [currentContent, setCurrentContent] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load entries on mount
+  // Load entries and folders on mount
   useEffect(() => {
     const loadedEntries = storage.getEntries();
+    const loadedFolders = storage.getFolders();
     setEntries(loadedEntries);
+    setFolders(loadedFolders);
     setIsLoaded(true);
 
     // Select first entry if available
@@ -56,6 +60,7 @@ export default function Home() {
       id: Date.now().toString(),
       title: '',
       content: '',
+      folderId: selectedFolderId || undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -96,14 +101,52 @@ export default function Home() {
     }
   };
 
+  const handleNewFolder = () => {
+    const newFolder: Folder = {
+      id: Date.now().toString(),
+      name: 'New Folder',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    storage.addFolder(newFolder);
+    setFolders([newFolder, ...folders]);
+  };
+
+  const handleDeleteFolder = (id: string) => {
+    storage.deleteFolder(id);
+    const filtered = folders.filter((f) => f.id !== id);
+    setFolders(filtered);
+  };
+
+  const handleRenameFolder = (id: string, name: string) => {
+    storage.updateFolder(id, { name });
+    setFolders((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, name, updatedAt: new Date() } : f))
+    );
+  };
+
+  const handleSelectFolder = (id: string | null) => {
+    setSelectedFolderId(id);
+    setSelectedId(null);
+    setCurrentTitle('');
+    setCurrentContent('');
+  };
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
         entries={entries}
+        folders={folders}
         selectedId={selectedId}
+        selectedFolderId={selectedFolderId}
         onSelectEntry={handleSelectEntry}
+        onSelectFolder={handleSelectFolder}
         onNewEntry={handleNewEntry}
+        onNewFolder={handleNewFolder}
         onDeleteEntry={handleDeleteEntry}
+        onDeleteFolder={handleDeleteFolder}
+        onRenameFolder={handleRenameFolder}
       />
       {selectedId ? (
         <MarkdownEditor

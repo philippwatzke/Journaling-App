@@ -1,6 +1,7 @@
-import { JournalEntry } from '@/types/journal';
+import { JournalEntry, Folder } from '@/types/journal';
 
 const STORAGE_KEY = 'journal-entries';
+const FOLDERS_KEY = 'journal-folders';
 
 export const storage = {
   getEntries: (): JournalEntry[] => {
@@ -56,5 +57,91 @@ export const storage = {
     const entries = storage.getEntries();
     const filtered = entries.filter(e => e.id !== id);
     storage.saveEntries(filtered);
+  },
+
+  // Folder operations
+  getFolders: (): Folder[] => {
+    if (typeof window === 'undefined') return [];
+
+    try {
+      const data = localStorage.getItem(FOLDERS_KEY);
+      if (!data) return [];
+
+      const folders = JSON.parse(data);
+      return folders.map((folder: any) => ({
+        ...folder,
+        createdAt: new Date(folder.createdAt),
+        updatedAt: new Date(folder.updatedAt),
+      }));
+    } catch (error) {
+      console.error('Error loading folders:', error);
+      return [];
+    }
+  },
+
+  saveFolders: (folders: Folder[]): void => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
+    } catch (error) {
+      console.error('Error saving folders:', error);
+    }
+  },
+
+  addFolder: (folder: Folder): void => {
+    const folders = storage.getFolders();
+    folders.unshift(folder);
+    storage.saveFolders(folders);
+  },
+
+  updateFolder: (id: string, updates: Partial<Folder>): void => {
+    const folders = storage.getFolders();
+    const index = folders.findIndex(f => f.id === id);
+
+    if (index !== -1) {
+      folders[index] = {
+        ...folders[index],
+        ...updates,
+        updatedAt: new Date(),
+      };
+      storage.saveFolders(folders);
+    }
+  },
+
+  deleteFolder: (id: string): void => {
+    const folders = storage.getFolders();
+    const filtered = folders.filter(f => f.id !== id);
+    storage.saveFolders(filtered);
+
+    // Move all entries in this folder to root (no folderId)
+    const entries = storage.getEntries();
+    const updated = entries.map(e =>
+      e.folderId === id ? { ...e, folderId: undefined } : e
+    );
+    storage.saveEntries(updated);
+  },
+
+  moveEntryToFolder: (entryId: string, folderId?: string): void => {
+    const entries = storage.getEntries();
+    const index = entries.findIndex(e => e.id === entryId);
+
+    if (index !== -1) {
+      entries[index] = {
+        ...entries[index],
+        folderId,
+        updatedAt: new Date(),
+      };
+      storage.saveEntries(entries);
+    }
+  },
+
+  getEntriesByFolder: (folderId?: string): JournalEntry[] => {
+    const entries = storage.getEntries();
+    if (folderId === undefined) {
+      // Get entries in root (no folderId)
+      return entries.filter(e => !e.folderId);
+    }
+    return entries.filter(e => e.folderId === folderId);
   },
 };
