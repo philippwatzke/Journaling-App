@@ -8,16 +8,20 @@ import { storage } from '@/lib/storage';
 
 export default function Home() {
   const [entries, setEntries] = useState<JournalEntry[]>([]);
+  const [folders, setFolders] = useState<Folder[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [currentTitle, setCurrentTitle] = useState('');
   const [currentContent, setCurrentContent] = useState('');
   const [currentColor, setCurrentColor] = useState(DEFAULT_COLOR);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load entries on mount
+  // Load entries and folders on mount
   useEffect(() => {
     const loadedEntries = storage.getEntries();
+    const loadedFolders = storage.getFolders();
     setEntries(loadedEntries);
+    setFolders(loadedFolders);
     setIsLoaded(true);
 
     // Select first entry if available
@@ -112,10 +116,16 @@ export default function Home() {
     <div className="flex h-screen overflow-hidden">
       <Sidebar
         entries={entries}
+        folders={folders}
         selectedId={selectedId}
+        selectedFolderId={selectedFolderId}
         onSelectEntry={handleSelectEntry}
+        onSelectFolder={handleSelectFolder}
         onNewEntry={handleNewEntry}
+        onNewFolder={handleNewFolder}
         onDeleteEntry={handleDeleteEntry}
+        onDeleteFolder={handleDeleteFolder}
+        onRenameFolder={handleRenameFolder}
       />
       {selectedId ? (
         <MarkdownEditor

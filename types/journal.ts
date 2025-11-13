@@ -1,3 +1,11 @@
+export interface Folder {
+  id: string;
+  name: string;
+  createdAt: Date;
+  updatedAt: Date;
+  color?: string; // Optional color for folders
+}
+
 export interface JournalEntry {
   id: string;
   title: string;
