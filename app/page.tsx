@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import MarkdownEditor from '@/components/MarkdownEditor';
-import { JournalEntry, Folder } from '@/types/journal';
+import { JournalEntry, DEFAULT_COLOR } from '@/types/journal';
 import { storage } from '@/lib/storage';
 
 export default function Home() {
@@ -13,6 +13,7 @@ export default function Home() {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null);
   const [currentTitle, setCurrentTitle] = useState('');
   const [currentContent, setCurrentContent] = useState('');
+  const [currentColor, setCurrentColor] = useState(DEFAULT_COLOR);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load entries and folders on mount
@@ -29,6 +30,7 @@ export default function Home() {
       setSelectedId(firstEntry.id);
       setCurrentTitle(firstEntry.title);
       setCurrentContent(firstEntry.content);
+      setCurrentColor(firstEntry.color);
     }
   }, []);
 
@@ -40,27 +42,28 @@ export default function Home() {
       storage.updateEntry(selectedId, {
         title: currentTitle,
         content: currentContent,
+        color: currentColor,
       });
 
       // Update local state
       setEntries((prev) =>
         prev.map((entry) =>
           entry.id === selectedId
-            ? { ...entry, title: currentTitle, content: currentContent, updatedAt: new Date() }
+            ? { ...entry, title: currentTitle, content: currentContent, color: currentColor, updatedAt: new Date() }
             : entry
         )
       );
     }, 500); // Debounce for 500ms
 
     return () => clearTimeout(timeoutId);
-  }, [currentTitle, currentContent, selectedId, isLoaded]);
+  }, [currentTitle, currentContent, currentColor, selectedId, isLoaded]);
 
   const handleNewEntry = () => {
     const newEntry: JournalEntry = {
       id: Date.now().toString(),
       title: '',
       content: '',
-      folderId: selectedFolderId || undefined,
+      color: DEFAULT_COLOR,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -70,6 +73,7 @@ export default function Home() {
     setSelectedId(newEntry.id);
     setCurrentTitle('');
     setCurrentContent('');
+    setCurrentColor(DEFAULT_COLOR);
   };
 
   const handleSelectEntry = (id: string) => {
@@ -78,6 +82,7 @@ export default function Home() {
       setSelectedId(id);
       setCurrentTitle(entry.title);
       setCurrentContent(entry.content);
+      setCurrentColor(entry.color);
     }
   };
 
@@ -93,44 +98,18 @@ export default function Home() {
         setSelectedId(nextEntry.id);
         setCurrentTitle(nextEntry.title);
         setCurrentContent(nextEntry.content);
+        setCurrentColor(nextEntry.color);
       } else {
         setSelectedId(null);
         setCurrentTitle('');
         setCurrentContent('');
+        setCurrentColor(DEFAULT_COLOR);
       }
     }
   };
 
-  const handleNewFolder = () => {
-    const newFolder: Folder = {
-      id: Date.now().toString(),
-      name: 'New Folder',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    storage.addFolder(newFolder);
-    setFolders([newFolder, ...folders]);
-  };
-
-  const handleDeleteFolder = (id: string) => {
-    storage.deleteFolder(id);
-    const filtered = folders.filter((f) => f.id !== id);
-    setFolders(filtered);
-  };
-
-  const handleRenameFolder = (id: string, name: string) => {
-    storage.updateFolder(id, { name });
-    setFolders((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, name, updatedAt: new Date() } : f))
-    );
-  };
-
-  const handleSelectFolder = (id: string | null) => {
-    setSelectedFolderId(id);
-    setSelectedId(null);
-    setCurrentTitle('');
-    setCurrentContent('');
+  const handleColorChange = (color: string) => {
+    setCurrentColor(color);
   };
 
   return (
@@ -152,8 +131,10 @@ export default function Home() {
         <MarkdownEditor
           title={currentTitle}
           content={currentContent}
+          color={currentColor}
           onTitleChange={setCurrentTitle}
           onContentChange={setCurrentContent}
+          onColorChange={handleColorChange}
         />
       ) : (
         <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-950">
