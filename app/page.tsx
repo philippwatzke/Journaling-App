@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar';
 import MarkdownEditor from '@/components/MarkdownEditor';
-import { JournalEntry } from '@/types/journal';
+import ImageUploader from '@/components/ImageUploader';
+import { JournalEntry, JournalImage } from '@/types/journal';
 import { storage } from '@/lib/storage';
 
 export default function Home() {
@@ -11,6 +12,7 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [currentTitle, setCurrentTitle] = useState('');
   const [currentContent, setCurrentContent] = useState('');
+  const [currentImages, setCurrentImages] = useState<JournalImage[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   // Load entries on mount
@@ -25,6 +27,7 @@ export default function Home() {
       setSelectedId(firstEntry.id);
       setCurrentTitle(firstEntry.title);
       setCurrentContent(firstEntry.content);
+      setCurrentImages(firstEntry.images || []);
     }
   }, []);
 
@@ -56,6 +59,7 @@ export default function Home() {
       id: Date.now().toString(),
       title: '',
       content: '',
+      images: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -65,6 +69,7 @@ export default function Home() {
     setSelectedId(newEntry.id);
     setCurrentTitle('');
     setCurrentContent('');
+    setCurrentImages([]);
   };
 
   const handleSelectEntry = (id: string) => {
@@ -73,6 +78,7 @@ export default function Home() {
       setSelectedId(id);
       setCurrentTitle(entry.title);
       setCurrentContent(entry.content);
+      setCurrentImages(entry.images || []);
     }
   };
 
@@ -88,11 +94,39 @@ export default function Home() {
         setSelectedId(nextEntry.id);
         setCurrentTitle(nextEntry.title);
         setCurrentContent(nextEntry.content);
+        setCurrentImages(nextEntry.images || []);
       } else {
         setSelectedId(null);
         setCurrentTitle('');
         setCurrentContent('');
+        setCurrentImages([]);
       }
+    }
+  };
+
+  const handleAddImage = (dataUrl: string, filename: string) => {
+    if (!selectedId) return;
+
+    storage.addImage(selectedId, dataUrl, filename);
+    const updatedEntries = storage.getEntries();
+    setEntries(updatedEntries);
+
+    const currentEntry = updatedEntries.find(e => e.id === selectedId);
+    if (currentEntry) {
+      setCurrentImages(currentEntry.images || []);
+    }
+  };
+
+  const handleRemoveImage = (imageId: string) => {
+    if (!selectedId) return;
+
+    storage.removeImage(selectedId, imageId);
+    const updatedEntries = storage.getEntries();
+    setEntries(updatedEntries);
+
+    const currentEntry = updatedEntries.find(e => e.id === selectedId);
+    if (currentEntry) {
+      setCurrentImages(currentEntry.images || []);
     }
   };
 
@@ -111,6 +145,9 @@ export default function Home() {
           content={currentContent}
           onTitleChange={setCurrentTitle}
           onContentChange={setCurrentContent}
+          images={currentImages}
+          onAddImage={handleAddImage}
+          onRemoveImage={handleRemoveImage}
         />
       ) : (
         <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-950">

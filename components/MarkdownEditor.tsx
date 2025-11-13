@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import ImageUploader from './ImageUploader';
+import { JournalImage } from '@/types/journal';
 
 interface MarkdownEditorProps {
   title: string;
   content: string;
   onTitleChange: (title: string) => void;
   onContentChange: (content: string) => void;
+  images: JournalImage[];
+  onAddImage: (dataUrl: string, filename: string) => void;
+  onRemoveImage: (imageId: string) => void;
 }
 
 export default function MarkdownEditor({
@@ -15,8 +20,20 @@ export default function MarkdownEditor({
   content,
   onTitleChange,
   onContentChange,
+  images,
+  onAddImage,
+  onRemoveImage,
 }: MarkdownEditorProps) {
   const [showPreview, setShowPreview] = useState(false);
+
+  const handleInsertImageReference = (imageId: string) => {
+    const image = images.find(img => img.id === imageId);
+    if (image) {
+      // Insert markdown image syntax with data URL
+      const imageMarkdown = `![${image.filename}](${image.dataUrl})\n`;
+      onContentChange(content + imageMarkdown);
+    }
+  };
 
   return (
     <div className="flex-1 flex flex-col h-screen bg-white dark:bg-gray-950">
@@ -53,37 +70,50 @@ export default function MarkdownEditor({
         </div>
       </div>
 
-      {/* Editor/Preview Area */}
-      <div className="flex-1 overflow-hidden">
-        {!showPreview ? (
-          <textarea
-            value={content}
-            onChange={(e) => onContentChange(e.target.value)}
-            placeholder="Start writing your thoughts..."
-            className="w-full h-full p-8 bg-transparent border-none outline-none resize-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 text-lg leading-relaxed"
-            style={{ fontFamily: 'inherit' }}
-          />
-        ) : (
-          <div className="h-full overflow-y-auto p-8">
-            <div className="max-w-4xl mx-auto">
-              {content ? (
-                <div className="markdown-preview prose prose-lg dark:prose-invert">
-                  <ReactMarkdown>{content}</ReactMarkdown>
-                </div>
-              ) : (
-                <p className="text-gray-400 dark:text-gray-600 text-lg">
-                  Nothing to preview yet. Start writing to see your formatted content.
-                </p>
-              )}
+      {/* Editor/Preview Area with Image Sidebar */}
+      <div className="flex-1 overflow-hidden flex">
+        {/* Main Editor/Preview */}
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {!showPreview ? (
+            <textarea
+              value={content}
+              onChange={(e) => onContentChange(e.target.value)}
+              placeholder="Start writing your thoughts..."
+              className="flex-1 p-8 bg-transparent border-none outline-none resize-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600 text-lg leading-relaxed"
+              style={{ fontFamily: 'inherit' }}
+            />
+          ) : (
+            <div className="flex-1 overflow-y-auto p-8">
+              <div className="max-w-4xl mx-auto">
+                {content ? (
+                  <div className="markdown-preview prose prose-lg dark:prose-invert">
+                    <ReactMarkdown>{content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <p className="text-gray-400 dark:text-gray-600 text-lg">
+                    Nothing to preview yet. Start writing to see your formatted content.
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Image Sidebar */}
+        <div className="w-80 border-l border-gray-200 dark:border-gray-800 p-6 overflow-y-auto bg-gray-50 dark:bg-gray-900">
+          <ImageUploader
+            images={images}
+            onImageAdd={onAddImage}
+            onImageRemove={onRemoveImage}
+            onCopyReference={handleInsertImageReference}
+          />
+        </div>
       </div>
 
       {/* Footer with helpful tips */}
       <div className="border-t border-gray-200 dark:border-gray-800 px-8 py-3 bg-gray-50 dark:bg-gray-900">
         <p className="text-xs text-gray-500 dark:text-gray-400">
-          Supports Markdown formatting • Auto-saved to local storage
+          Supports Markdown formatting • Image attachments • Auto-saved to local storage
         </p>
       </div>
     </div>

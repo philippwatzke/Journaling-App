@@ -15,6 +15,10 @@ export const storage = {
         ...entry,
         createdAt: new Date(entry.createdAt),
         updatedAt: new Date(entry.updatedAt),
+        images: (entry.images || []).map((image: any) => ({
+          ...image,
+          uploadedAt: new Date(image.uploadedAt),
+        })),
       }));
     } catch (error) {
       console.error('Error loading entries:', error);
@@ -56,5 +60,33 @@ export const storage = {
     const entries = storage.getEntries();
     const filtered = entries.filter(e => e.id !== id);
     storage.saveEntries(filtered);
+  },
+
+  addImage: (entryId: string, dataUrl: string, filename: string): void => {
+    const entries = storage.getEntries();
+    const entry = entries.find(e => e.id === entryId);
+
+    if (entry) {
+      if (!entry.images) {
+        entry.images = [];
+      }
+      entry.images.push({
+        id: Date.now().toString(),
+        dataUrl,
+        filename,
+        uploadedAt: new Date(),
+      });
+      storage.saveEntries(entries);
+    }
+  },
+
+  removeImage: (entryId: string, imageId: string): void => {
+    const entries = storage.getEntries();
+    const entry = entries.find(e => e.id === entryId);
+
+    if (entry && entry.images) {
+      entry.images = entry.images.filter(img => img.id !== imageId);
+      storage.saveEntries(entries);
+    }
   },
 };
