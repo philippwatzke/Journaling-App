@@ -4,4 +4,6 @@ export interface JournalEntry {
   content: string;
   createdAt: Date;
   updatedAt: Date;
+  tags?: string[];
+  category?: string;
 }

@@ -11,7 +11,11 @@ export default function Home() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [currentTitle, setCurrentTitle] = useState('');
   const [currentContent, setCurrentContent] = useState('');
+  const [currentTags, setCurrentTags] = useState<string[]>([]);
+  const [currentCategory, setCurrentCategory] = useState<string | undefined>();
   const [isLoaded, setIsLoaded] = useState(false);
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(null);
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
 
   // Load entries on mount
   useEffect(() => {
@@ -25,6 +29,8 @@ export default function Home() {
       setSelectedId(firstEntry.id);
       setCurrentTitle(firstEntry.title);
       setCurrentContent(firstEntry.content);
+      setCurrentTags(firstEntry.tags || []);
+      setCurrentCategory(firstEntry.category);
     }
   }, []);
 
@@ -36,26 +42,30 @@ export default function Home() {
       storage.updateEntry(selectedId, {
         title: currentTitle,
         content: currentContent,
+        tags: currentTags,
+        category: currentCategory,
       });
 
       // Update local state
       setEntries((prev) =>
         prev.map((entry) =>
           entry.id === selectedId
-            ? { ...entry, title: currentTitle, content: currentContent, updatedAt: new Date() }
+            ? { ...entry, title: currentTitle, content: currentContent, tags: currentTags, category: currentCategory, updatedAt: new Date() }
             : entry
         )
       );
     }, 500); // Debounce for 500ms
 
     return () => clearTimeout(timeoutId);
-  }, [currentTitle, currentContent, selectedId, isLoaded]);
+  }, [currentTitle, currentContent, currentTags, currentCategory, selectedId, isLoaded]);
 
   const handleNewEntry = () => {
     const newEntry: JournalEntry = {
       id: Date.now().toString(),
       title: '',
       content: '',
+      tags: [],
+      category: undefined,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -65,6 +75,8 @@ export default function Home() {
     setSelectedId(newEntry.id);
     setCurrentTitle('');
     setCurrentContent('');
+    setCurrentTags([]);
+    setCurrentCategory(undefined);
   };
 
   const handleSelectEntry = (id: string) => {
@@ -73,6 +85,8 @@ export default function Home() {
       setSelectedId(id);
       setCurrentTitle(entry.title);
       setCurrentContent(entry.content);
+      setCurrentTags(entry.tags || []);
+      setCurrentCategory(entry.category);
     }
   };
 
@@ -88,29 +102,52 @@ export default function Home() {
         setSelectedId(nextEntry.id);
         setCurrentTitle(nextEntry.title);
         setCurrentContent(nextEntry.content);
+        setCurrentTags(nextEntry.tags || []);
+        setCurrentCategory(nextEntry.category);
       } else {
         setSelectedId(null);
         setCurrentTitle('');
         setCurrentContent('');
+        setCurrentTags([]);
+        setCurrentCategory(undefined);
       }
     }
   };
 
+  // Filter entries based on selected category and tag
+  const filteredEntries = entries.filter((entry) => {
+    if (selectedCategoryFilter && entry.category !== selectedCategoryFilter) {
+      return false;
+    }
+    if (selectedTagFilter && (!entry.tags || !entry.tags.includes(selectedTagFilter))) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar
-        entries={entries}
+        entries={filteredEntries}
         selectedId={selectedId}
         onSelectEntry={handleSelectEntry}
         onNewEntry={handleNewEntry}
         onDeleteEntry={handleDeleteEntry}
+        selectedCategory={selectedCategoryFilter}
+        selectedTag={selectedTagFilter}
+        onCategoryFilter={setSelectedCategoryFilter}
+        onTagFilter={setSelectedTagFilter}
       />
       {selectedId ? (
         <MarkdownEditor
           title={currentTitle}
           content={currentContent}
+          tags={currentTags}
+          category={currentCategory}
           onTitleChange={setCurrentTitle}
           onContentChange={setCurrentContent}
+          onTagsChange={setCurrentTags}
+          onCategoryChange={setCurrentCategory}
         />
       ) : (
         <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-950">

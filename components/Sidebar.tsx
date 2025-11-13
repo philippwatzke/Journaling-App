@@ -9,6 +9,10 @@ interface SidebarProps {
   onSelectEntry: (id: string) => void;
   onNewEntry: () => void;
   onDeleteEntry: (id: string) => void;
+  selectedCategory?: string | null;
+  selectedTag?: string | null;
+  onCategoryFilter?: (category: string | null) => void;
+  onTagFilter?: (tag: string | null) => void;
 }
 
 export default function Sidebar({
@@ -17,6 +21,10 @@ export default function Sidebar({
   onSelectEntry,
   onNewEntry,
   onDeleteEntry,
+  selectedCategory,
+  selectedTag,
+  onCategoryFilter,
+  onTagFilter,
 }: SidebarProps) {
   return (
     <div className="w-80 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 flex flex-col h-screen">
@@ -77,6 +85,40 @@ export default function Sidebar({
                       <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 line-clamp-2">
                         {entry.content.substring(0, 100)}
                       </p>
+                    )}
+                    {(entry.category || (entry.tags && entry.tags.length > 0)) && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {entry.category && (
+                          <span
+                            className="inline-block px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-100 rounded cursor-pointer hover:opacity-80"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onCategoryFilter?.(entry.category!);
+                            }}
+                          >
+                            {entry.category}
+                          </span>
+                        )}
+                        {entry.tags && entry.tags.length > 0 && (
+                          entry.tags.slice(0, 2).map((tag) => (
+                            <span
+                              key={tag}
+                              className="inline-block px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-100 rounded cursor-pointer hover:opacity-80"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onTagFilter?.(tag);
+                              }}
+                            >
+                              #{tag}
+                            </span>
+                          ))
+                        )}
+                        {entry.tags && entry.tags.length > 2 && (
+                          <span className="inline-block px-2 py-1 text-xs text-gray-500 dark:text-gray-400">
+                            +{entry.tags.length - 2} more
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                   <button

@@ -2,19 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
+import TagInput from './TagInput';
+import CategorySelector from './CategorySelector';
 
 interface MarkdownEditorProps {
   title: string;
   content: string;
+  tags?: string[];
+  category?: string;
   onTitleChange: (title: string) => void;
   onContentChange: (content: string) => void;
+  onTagsChange?: (tags: string[]) => void;
+  onCategoryChange?: (category: string | undefined) => void;
 }
 
 export default function MarkdownEditor({
   title,
   content,
+  tags = [],
+  category,
   onTitleChange,
   onContentChange,
+  onTagsChange,
+  onCategoryChange,
 }: MarkdownEditorProps) {
   const [showPreview, setShowPreview] = useState(false);
 
@@ -29,7 +39,7 @@ export default function MarkdownEditor({
           placeholder="Entry title..."
           className="w-full text-3xl font-bold bg-transparent border-none outline-none text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-600"
         />
-        <div className="flex gap-2 mt-4">
+        <div className="flex gap-2 mt-4 mb-6">
           <button
             onClick={() => setShowPreview(false)}
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
@@ -51,6 +61,27 @@ export default function MarkdownEditor({
             Preview
           </button>
         </div>
+
+        {/* Tags and Category Section */}
+        {!showPreview && (
+          <div className="border-t border-gray-200 dark:border-gray-800 pt-6 mt-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                {onTagsChange && (
+                  <TagInput tags={tags} onTagsChange={onTagsChange} />
+                )}
+              </div>
+              <div>
+                {onCategoryChange && (
+                  <CategorySelector
+                    category={category}
+                    onCategoryChange={onCategoryChange}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Editor/Preview Area */}
